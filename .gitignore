@@ -1,0 +1,26 @@
+#invisible in Rstudio gui but does exist:
+.Rproj.user
+#not exists:
+.Ruserdata
+#unwanted extensions
+*\.csv
+*\.dcf
+*\.dll
+*\.html
+*\.ico
+*\.jpg
+*\.md
+*\.pdf
+*\.png
+*\.rd[a-z]
+*\.Rdata
+*\.Rhistory
+*\.Rproj
+*\.xls*
+*\.zip
+#unwanted files
+tmp*.*
+#unwanted folders
+man/*
+temp*/*
+

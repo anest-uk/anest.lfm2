@@ -1,0 +1,17 @@
+Package: anest.lfm2
+Type: Package
+Title: Linear Factor Model by truncated PCA
+Version: 0.1
+Date: 2022-08-15
+Author: Giles Heywood
+Maintainer: <giles.heywood@gmail.com>
+Description: Truncated PCA linear factor model with options for scaling, rotation
+    No missing data methods - intended for regular index data
+License: contract
+Depends:
+    R (>= 2.0.0),
+    anest.lib1,
+    data.table
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.2.1
