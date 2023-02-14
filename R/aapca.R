@@ -260,3 +260,29 @@ pcarot <- function( #this replaces pxmo::f210222b
 	x1
 }
 
+#' @export
+pcarot0 <- function( #design rotation 230210
+	x1, #is a pcaest object
+	krot=2:3,#ncol(x[,-'date']),
+	startdx=as.Date('1996-12-31'), #added at some point - exclude noisy?
+	maxrot=1 #added 220510 but not used
+) {
+	# - [ ] class='pcaest' | min-range-rotator taking pcaest as input
+  #browser()
+	krot <- setdiff(krot,1)
+	krot <- krot[krot<=ncol(x1$x[,-'date'])]
+	f1=function(rr=0,jj=2,xm,startd=startdx) { #apply rr with jj
+		x1 <- copy(xm)
+		x1$tantheta[jj] <- rr
+		xx <- diff(range(cumsum(pcaz(xest=x1)[x1[['date']]>=startdx])[,jj,drop=F]))
+		xx
+	}
+	kbar <- x1$par$kbar 
+	initialgrid <- ((-20:20)/21)+.01
+	for(k in sort(unique(pmin(krot,kbar)))) {
+		start <- initialgrid[which.min(sapply(initialgrid,f1,xm=x1,jj=k))]
+		x1$tantheta[k] <- nlm(f=f1,p=start,j=k,xm=x1,startd=startdx)$estimate
+	}
+	x1 #is a pcaest object with updated [['tantheta']]
+}
+
