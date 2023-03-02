@@ -8,30 +8,16 @@ pcaest <- function(x = data.table(date, retmat),
 									 rollsum=1, #apply rollsum
 									 verbose=T,
 									 center=T,
-									 window=nrow(x),
-									 pcawin=x[,range(date)],
-									 rotwin=c(x[,sort(date)[2]],pcawin[2]), #default to eliminate first period (SNR motive)
-									 rotate=T,
-									 krot=2:3
+									 window=nrow(x)
 									 ){
 	# - [ ]  eigen, polarity
-  #browser()
-  if(window!=nrow(x)) { #for backward compatibility, window overrides pcawin
-    pcawin <- x[(1:window)+(nrow(x)-window),date]
-  }
 	iscale <- match.arg(iscale)
 	method <- match.arg(method)
 	signmethod <- match.arg(signmethod)
-	pcawin <- sort(round(as.Date(pcawin)))
-	stopifnot(is.Date(pcawin)&all(pcawin%in%x[,date])&length(pcawin)==2)
-	rotwin <- sort(round(as.Date(rotwin)))
-	stopifnot(is.Date(rotwin)&all(rotwin%in%x[,date])&length(rotwin)==2)
-	ipcawin <- setNames(match(pcawin,x[,date]),pcawin)
-	irotwin <- setNames(match(rotwin,x[,date]),rotwin)
 	nbar <- ncol(x) - 1
 	x0 <- rollapply(x[,-'date'],width=rollsum,FUN=sum,partial=T,align='right')
 	if(rollsum!=1&verbose) {print(paste0('rollsum=',rollsum,' in pcaest'))}
-	x1 <- cov.wt(x0[ipcawin[1]:ipcawin[2],],
+	x1 <- cov.wt(tail(x0,window),
 							 method = method,
 							 center = center,
 							 cor = T)
@@ -79,7 +65,7 @@ pcaest <- function(x = data.table(date, retmat),
 											STAT = x4,
 											MAR = 2,
 											FUN = `/`)
-	x4 <- list(
+	list(
 		x = x,
 		xrs = x0, #has rollsum applied
 		date = x[, date],
@@ -93,16 +79,9 @@ pcaest <- function(x = data.table(date, retmat),
 			iscale = iscale,
 			xsect = '',
 			rollsum=rollsum,
-			kbar=kbar,
-			ipcawin=ipcawin,
-			irotwin=irotwin
+			kbar=kbar
 		)
 	)
-	if(rotate) {
-	  x4 <- pcarot0(x4)
-	}
-	plot(cumsum(pcaz(x4))[,1:3],scr=1,col=1:3)
-	x4
 }
 
 #' @export
@@ -237,80 +216,72 @@ pcajscale <- function(xest,
 	x1
 }
 
-
 #' @export
-pcarot <- function(...) {
-  #pcarot() has been replaced with pcaest(rotate=T)
-  pcaest(...,rotate=T)
-  }
-
-# pcarot <- function( #this replaces pxmo::f210222b
-# 	x, #=dcast(f210310ed[,.(date,cenq=paste0(cen,q),xdot)],date~cenq,value.var='xdot')
-# 	krot=2:3,#ncol(x[,-'date']),
-# 	rollsum=1, #12, changed 0520
-# 	center=T,
-# 	signmethod='reference',
-# 	rcref=max(names(x[,-'date'])),
-# 	window=nrow(x),
-# 	method=c('ML','unbiased'),
-# 	refpolx=c(1,-1,-1),
-# 	startdx=as.Date('1996-12-31'), #added at some point
-# 	maxrot=1 #added 220510 but not used
-# ) {
-# 	# - [ ] DEPRECATED class='pcaest' | min-range-rotator: rot(est(pca(f210222ad))) nbar x qbar assets
-#   #deprecated - pcarot has been replaced with pcaest(rotate=T) but since pcarot is idempotent, pcarot(pcaest(rotate=T/F)) == pcarot(rotate=T)
-#   #only pcaest(rotate=default=T) will now behave differently because previously the default was unrotated, but this is rare/never used
-# 	method <- match.arg(method)
-# 	krot <- setdiff(krot,1)
-# 	krot <- krot[krot<=ncol(x[,-'date'])]
-# 	x1 <- pcaest(
-# 		x=x,
-# 		iscale='cov',
-# 		method=method,
-# 		signmethod=signmethod,
-# 		rcref=rcref,
-# 		refpol=refpolx,
-# 		rollsum=rollsum,
-# 		center=center,
-# 		window=window
-# 	)
-# 	f1=function(rr=0,jj=2,xm,startd=startdx) { #apply rr with jj
-# 		x1 <- copy(xm)
-# 		x1$tantheta[jj] <- rr
-# 		xx <- diff(range(cumsum(pcaz(xest=x1)[x1[['date']]>=startdx])[,jj,drop=F]))
-# 		xx
-# 	}
-# 	kbar <- x1$par$kbar #x2$par$kbar
-# 	initialgrid <- ((-20:20)/21)+.01
-# 	for(k in sort(unique(pmin(krot,kbar)))) {
-# 		start <- initialgrid[which.min(sapply(initialgrid,f1,xm=x1,jj=k))]
-# 		x1$tantheta[k] <- nlm(f=f1,p=start,j=k,xm=x1,startd=startdx)$estimate
-# 	}
-# 	x1
-# }
-
-#' @export
-pcarot0 <- function( #design rotation 230223 - normally only to be called by pcaest
-	x1, #is a pcaest object
+pcarot <- function( #this replaces pxmo::f210222b
+	x, #=dcast(f210310ed[,.(date,cenq=paste0(cen,q),xdot)],date~cenq,value.var='xdot')
 	krot=2:3,#ncol(x[,-'date']),
-	irotwin=x1$par$irotwin[1]:x1$par$irotwin[2] #tested and set in pcaest, index into x1
+	rollsum=1, #12, changed 0520
+	center=T,
+	signmethod='reference',
+	rcref=max(names(x[,-'date'])),
+	window=nrow(x),
+	method=c('ML','unbiased'),
+	refpolx=c(1,-1,-1),
+	startdx=as.Date('1996-12-31'), #added at some point
+	maxrot=1 #added 220510 but not used
 ) {
-	# - [ ] class='pcaest' | min-range-rotator taking pcaest as input
+	# - [ ] class='pcaest' | min-range-rotator: rot(est(pca(f210222ad))) nbar x qbar assets
+	method <- match.arg(method)
 	krot <- setdiff(krot,1)
-	krot <- krot[krot<=ncol(x1$x[,-'date'])]
-	f1=function(rr=0,jj=2,xm,irotwin) { #apply rr with jj
+	krot <- krot[krot<=ncol(x[,-'date'])]
+	x1 <- pcaest(
+		x=x,
+		iscale='cov',
+		method=method,
+		signmethod=signmethod,
+		rcref=rcref,
+		refpol=refpolx,
+		rollsum=rollsum,
+		center=center,
+		window=window
+	)
+	f1=function(rr=0,jj=2,xm,startd=startdx) { #apply rr with jj
 		x1 <- copy(xm)
 		x1$tantheta[jj] <- rr
-		xx <- diff(range(cumsum(pcaz(xest=x1)[irotwin])[,jj,drop=F]))
+		xx <- diff(range(cumsum(pcaz(xest=x1)[x1[['date']]>=startdx])[,jj,drop=F]))
+		xx
+	}
+	kbar <- x1$par$kbar #x2$par$kbar
+	initialgrid <- ((-20:20)/21)+.01
+	for(k in sort(unique(pmin(krot,kbar)))) {
+		start <- initialgrid[which.min(sapply(initialgrid,f1,xm=x1,jj=k))]
+		x1$tantheta[k] <- nlm(f=f1,p=start,j=k,xm=x1,startd=startdx)$estimate
+	}
+	x1
+}
+
+#' @export
+pcarot0 <- function( #design rotation 230210
+	x1, #is a pcaest object
+	krot=2:3,#ncol(x[,-'date']),
+	startdx=as.Date('1996-12-31'), #added at some point - exclude noisy?
+	maxrot=1 #added 220510 but not used
+) {
+	# - [ ] class='pcaest' | min-range-rotator taking pcaest as input
+  #browser()
+	krot <- setdiff(krot,1)
+	krot <- krot[krot<=ncol(x1$x[,-'date'])]
+	f1=function(rr=0,jj=2,xm,startd=startdx) { #apply rr with jj
+		x1 <- copy(xm)
+		x1$tantheta[jj] <- rr
+		xx <- diff(range(cumsum(pcaz(xest=x1)[x1[['date']]>=startdx])[,jj,drop=F]))
 		xx
 	}
 	kbar <- x1$par$kbar 
 	initialgrid <- ((-20:20)/21)+.01
-	kset <- sort(unique(pmin(krot,kbar)))
-	for(i in seq_along(kset)) {
-	  k <- kset[i]
-		start <- initialgrid[which.min(sapply(initialgrid,f1,xm=x1,jj=k,irotwin=irotwin))]
-		x1$tantheta[k] <- nlm(f=f1,p=start,j=k,xm=x1,irotwin=irotwin)$estimate
+	for(k in sort(unique(pmin(krot,kbar)))) {
+		start <- initialgrid[which.min(sapply(initialgrid,f1,xm=x1,jj=k))]
+		x1$tantheta[k] <- nlm(f=f1,p=start,j=k,xm=x1,startd=startdx)$estimate
 	}
 	x1 #is a pcaest object with updated [['tantheta']]
 }
