@@ -8,7 +8,6 @@ pcaest <- function(x = data.table(date, retmat),
 									 rollsum=1, #apply rollsum
 									 verbose=T,
 									 center=T,
-									 window=nrow(x),
 									 pcawin=x[,range(date)],
 									 rotwin=c(x[,sort(date)[2]],pcawin[2]), #default to eliminate first period (SNR motive)
 									 rotate=T,
@@ -16,9 +15,6 @@ pcaest <- function(x = data.table(date, retmat),
 									 ){
 	# - [ ]  eigen, polarity
   #browser()
-  if(window!=nrow(x)) { #for backward compatibility, window overrides pcawin
-    pcawin <- x[(1:window)+(nrow(x)-window),date]
-  }
 	iscale <- match.arg(iscale)
 	method <- match.arg(method)
 	signmethod <- match.arg(signmethod)
@@ -237,13 +233,7 @@ pcajscale <- function(xest,
 	x1
 }
 
-
-#' @export
-pcarot <- function(...) {
-  #pcarot() has been replaced with pcaest(rotate=T)
-  pcaest(...,rotate=T)
-  }
-
+#pcarot has been replaced with pcaest(rotate=T)
 # pcarot <- function( #this replaces pxmo::f210222b
 # 	x, #=dcast(f210310ed[,.(date,cenq=paste0(cen,q),xdot)],date~cenq,value.var='xdot')
 # 	krot=2:3,#ncol(x[,-'date']),
@@ -257,9 +247,7 @@ pcarot <- function(...) {
 # 	startdx=as.Date('1996-12-31'), #added at some point
 # 	maxrot=1 #added 220510 but not used
 # ) {
-# 	# - [ ] DEPRECATED class='pcaest' | min-range-rotator: rot(est(pca(f210222ad))) nbar x qbar assets
-#   #deprecated - pcarot has been replaced with pcaest(rotate=T) but since pcarot is idempotent, pcarot(pcaest(rotate=T/F)) == pcarot(rotate=T)
-#   #only pcaest(rotate=default=T) will now behave differently because previously the default was unrotated, but this is rare/never used
+# 	# - [ ] class='pcaest' | min-range-rotator: rot(est(pca(f210222ad))) nbar x qbar assets
 # 	method <- match.arg(method)
 # 	krot <- setdiff(krot,1)
 # 	krot <- krot[krot<=ncol(x[,-'date'])]
