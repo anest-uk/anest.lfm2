@@ -233,6 +233,9 @@ pcajscale <- function(xest,
 	x1
 }
 
+#' @export
+pcarot <- function(x,...) {pcaest(x=x,...)}
+
 #pcarot has been replaced with pcaest(rotate=T)
 # pcarot <- function( #this replaces pxmo::f210222b
 # 	x, #=dcast(f210310ed[,.(date,cenq=paste0(cen,q),xdot)],date~cenq,value.var='xdot')
