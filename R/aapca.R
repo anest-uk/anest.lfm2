@@ -11,7 +11,8 @@ pcaest <- function(x = data.table(date, retmat),
 									 pcawin=x[,range(date)],
 									 rotwin=c(x[,sort(date)[2]],pcawin[2]), #default to eliminate first period (SNR motive)
 									 rotate=T,
-									 krot=2:3
+									 krot=2:3,
+									 doplot=F
 									 ){
 	# - [ ]  eigen, polarity
   #browser()
@@ -97,7 +98,7 @@ pcaest <- function(x = data.table(date, retmat),
 	if(rotate) {
 	  x4 <- pcarot0(x4)
 	}
-	plot(cumsum(pcaz(x4))[,1:3],scr=1,col=1:3)
+	if(doplot) {plot(cumsum(pcaz(x4))[,1:3],scr=1,col=1:3)}
 	x4
 }
 
