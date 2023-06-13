@@ -299,7 +299,11 @@ pcadrc <-  # - [ ] class='pcaest' | min-range-rotator taking pcaest as input
     rbarsq=x1,                          #rbarsq
     r=apply(pcaz(pca)[,2:kbar]^2,1,sum),#k=2,3 variance
     start=dates[-length(dates)],        #period start
-    end=dates[-1]                       #period end
+    end=dates[-1],                       #period end
+    pcaz(pca)[,2:3]%>%
+      coredata(.)%>%
+      data.table(.)%>%
+      setnames(.,c('z2','z3'))
   )
   x2 
 }
