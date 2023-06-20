@@ -270,7 +270,7 @@ pcarot0 <-
       start <- initialgrid[which.min(sapply(initialgrid,f1,xm=x1,jj=k,irotwin=irotwin))]
       x1$tantheta[k] <- nlm(f=f1,p=start,j=k,xm=x1,irotwin=irotwin)$estimate
     }
-    x1 #pcaest object with updated [['tantheta']]
+    x1 #with updated tantheta
   }
 
 
