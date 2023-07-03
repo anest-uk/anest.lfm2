@@ -282,21 +282,22 @@ pcadrc <-  # - [ ] class='pcaest' | min-range-rotator taking pcaest as input
     kbar=3
 ) {
   dates <- c(date0,pca$date)
-  x1 <- NA
+  x2 <- x1 <- NA
   for(i in 1:nrow(pca$x)) {
-    x1[i] <- 
-      data.table(
+    x0 <- data.table(
         y=unlist(t(pca$x[i,-1])),
         x=pcab(pca)[,1:kbar]
       )%>%
       setnames(.,c('y',paste0('b',1:kbar)))%>%
       lm(y~.,.)%>%
-      summary(.)%>%
-      `[[`(.,j='adj.r.squared')
+      summary(.)
+    x1[i] <- x0[['adj.r.squared']]
+    x2[i] <- x0[['r.squared']]
   }
-  x2 <- data.table(
+  x3 <- data.table(
     days=as.numeric(diff(dates)),       #days
     rbarsq=x1,                          #rbarsq
+    rsq=x2,
     r=apply(pcaz(pca)[,2:kbar]^2,1,sum),#k=2,3 variance
     start=dates[-length(dates)],        #period start
     end=dates[-1],                       #period end
@@ -305,5 +306,5 @@ pcadrc <-  # - [ ] class='pcaest' | min-range-rotator taking pcaest as input
       data.table(.)%>%
       setnames(.,c('z2','z3'))
   )
-  x2 
+  x3
 }
