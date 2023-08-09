@@ -12,7 +12,7 @@ pcaest <-
     center=T,
     pcawin=x[,range(date)],
     rotwin=c(x[,sort(date)[2]],pcawin[2]), #default to eliminate first period (SNR motive)
-    rotate=T,
+    rotate=T, #always T
     krot=2:3,
     doplot=F
   ){
@@ -95,7 +95,7 @@ pcaest <-
         irotwin=irotwin
       )
     )
-    if(rotate) {
+    if(rotate) { #solve theta to minimise range(z(k=2,3)), update tantheta
       x4 <- pcarot0(x4)
     }
     if(doplot) {plot(cumsum(pcaz(x4))[,1:3],scr=1,col=1:3)}
@@ -127,7 +127,32 @@ rr3 <-
   }
 
 #' @export
-tanrot <-
+tanrot <- #3d rotation 230808, backward compatible for k!=1; does k=1 rotation last and calls rr2 directly with no rr3
+  function( 
+  tantheta = rep(0, 3), #rotation angle
+  jbar = 5, #should be kbar (backward-compatibility issue)
+  krnk = c(3,1,2), #apply in order of krnk i.e. k=1 3rd; k=2 1st;  k=3 2nd 
+  knorm = c(1,3,2)  #dimension excluded ie plane-normal
+) {
+  x1 <- tantheta[1:3] #k-order
+  x2 <- as.list(x1)
+  for (kk in 1:3) { #k-order
+    k <- setdiff(1:3,knorm[kk])
+    x4 <- rrr2(tantheta = tantheta[kk]) 
+    x5 <- diag(jbar)
+    x5[k[1],k[1]] <- x4[1,1]
+    x5[k[2],k[2]] <- x4[2,2]
+    x5[k[1],k[2]] <- x4[1,2]
+    x5[k[2],k[1]] <- x4[2,1]
+    x2[[kk]] <- x5
+  }
+  order(krnk)%>% #reorder to apply-order
+  `[`(x2,i=.)%>% 
+  Reduce(`%*%`, .)
+  }
+
+#' @export
+tanrot.dep <- #deprecated version 
   function( # - [ ]  anglevector -> rotation
     tantheta = rep(0, 3),
     jbar = 5
@@ -240,7 +265,7 @@ pcajscale <-
   }
 
 #' @export
-pcarot <- 
+pcarot <- #alias
   function(
     x,...
   ) {
