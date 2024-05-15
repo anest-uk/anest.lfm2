@@ -1,6 +1,6 @@
 #' @export
 pcaest <- 
-  function(#eigen, polarity
+  function(# - [ ]  eigen, polarity
     x = data.table(date, retmat),
     iscale = c('cov', 'cor'),
     method = c( 'ML','unbiased'),
@@ -104,7 +104,7 @@ pcaest <-
 
 #' @export
 rrr2 <-
-  function( # rotate 2D from a real number
+  function( # - [ ]  #rotate 2D from a real number
     tantheta = .1
   ) {
     th <- atan(tantheta)
@@ -113,7 +113,7 @@ rrr2 <-
 
 #' @export
 rr3 <-
-  function( # rotate 2 out of jbar in the (x1,xjrot) plane
+  function( # - [ ]  rotate 2 out of jbar in the (x1,xjrot) plane
     tantheta = 1,
     jrot = 3,
     jbar = 3
@@ -127,8 +127,9 @@ rr3 <-
   }
 
 #' @export
-tanrot <- 
-  function(#rowvector1 = rowvector0 x tanrot(tantheta); rotate coordinates not axes
+tanrot <- #rowvector1 = rowvector0 x tanrot(tantheta); rotate coordinates not axes
+  #this version 230812, clearer and applies normal-to-1 rotation last
+  function(
     tantheta = rep(0, 3), #rotation angle: 2->3,2->1,3->1
     jbar = 5,#, #should be kbar (backward-compatibility issue)
     reorder = T,
@@ -139,26 +140,21 @@ tanrot <-
   #2 rotation order was and is 2->1,3->1,2->3
   if(reorder) { #reorder legacy-order -> by-normal order
     tti <-  #by-normal-order
-      c( #this is information: where to find the angle for a particular normal, using legacy convention
-        1,#1 means normal-to-1 is found in index 1 [applied third but this info found in kord, not tti]
-        3,#3 means normal-to-3 is found in index 2 [applied first]
-        2 #2 means normal-to-2 is found in index 3 [applied second]
-        )
+      c(1,3,2) 
   } else {
     tti <- #unch
       c(1,2,3)
   }
-  x0 <- #tantheta in order of normals
+  x0 <-
     tantheta[tti]
-  x1 <- #tantheta in order of normals augmented with from and to
+  x1 <- 
     data.table( 
       x=c(2,1,1), #from dimension->
       y=c(3,3,2), #->to dimension
       tantheta=x0 #delta positive will increase to-dimension
     )
   x2 <- as.list(NULL)
-  i <- 1
-  for (i in 1:3) { #i is jnormal 
+  for (i in 1:3) {
     x3 <- #compute a 2d rotation moving coordinates, not axes
       rrr2(tantheta = x1[i,tantheta]) 
     x4 <- #assign to the to/from columns
@@ -172,15 +168,54 @@ tanrot <-
     x2[[i]] <- x4
   }
   x5 <- x2[kord] %>% #composite rotation
-    Reduce(`%*%`, .)  #same as x2[[3]]%*%x2[[2]]%*%x2[[1]], which is correct because rotate in reverse order of normals
+    Reduce(`%*%`, .)
   x5
 }
 
+# tanrot <- #3d rotation 230808, backward compatible for k!=1; does k=1 rotation last and calls rr2 directly with no rr3
+#   function(
+#   tantheta = rep(0, 3), #rotation angle
+#   jbar = 5, #should be kbar (backward-compatibility issue)
+#   krnk = c(3,1,2), #apply in order of krnk i.e. k=1 3rd; k=2 1st;  k=3 2nd
+#   knorm = c(1,3,2)  #dimension excluded ie plane-normal
+# ) {
+#   x1 <- tantheta[1:3] #k-order
+#   x2 <- as.list(x1)
+#   for (kk in 1:3) { #k-order
+#     k <- setdiff(1:3,knorm[kk])
+#     x4 <- rrr2(tantheta = tantheta[kk])
+#     x5 <- diag(jbar)
+#     x5[k[1],k[1]] <- x4[1,1]
+#     x5[k[2],k[2]] <- x4[2,2]
+#     x5[k[1],k[2]] <- x4[1,2]
+#     x5[k[2],k[1]] <- x4[2,1]
+#     x2[[kk]] <- x5
+#   }
+#   order(krnk)%>% #reorder to apply-order
+#   `[`(x2,i=.)%>%
+#   Reduce(`%*%`, .)
+#   }
 
+#' @export
+tanrot.dep <- #deprecated version 
+  function( # - [ ]  anglevector -> rotation
+    tantheta = rep(0, 3),
+    jbar = 5
+  ) {
+    tantheta[1] <- 0 #all rotations are perp. to plane {1,j}
+    x1 <- list(diag(jbar))
+    j <- 3
+    for (j in which(tantheta!=0)) {
+      x1[[j]] <- rr3(tantheta = tantheta[j],
+                     jrot = j,
+                     jbar = jbar)
+    }
+    Reduce(`%*%`, x1)
+  }
 
 #' @export
 pcah <-
-  function( #h holdings (unit variance factor portfolios)
+  function( # - [ ] h holdings (unit variance factor portfolios)
     xest
   ) {
     nbar <- ncol(xest$x[, -'date'])
@@ -202,7 +237,7 @@ pcah <-
 
 #' @export
 pcab <-
-  function( #beta : only when g=1 are these covariance-related, otherwise 'sensitivity' to a scaled factor
+  function( # - [ ] beta : only when g=1 are these covariance-related, otherwise 'sensitivity' to a scaled factor
     xest
   ) {
     nbar <- ncol(xest$x[, -'date'])
@@ -224,7 +259,7 @@ pcab <-
 
 #' @export
 pcaz <-
-  function( #factor timeseries
+  function( # - [ ]  factor timeseries
     xest = pcaestd,
     x = xest$x,
     h = pcah(xest)
@@ -234,7 +269,7 @@ pcaz <-
 
 #' @export
 pcaobj <-
-  function( #objective function for rotation
+  function( # - [ ] objective function for rotation
     tantheta = 0,
     xest = y2a,
     j = 2,
@@ -248,7 +283,7 @@ pcaobj <-
 
 #' @export
 pcajscale <-
-  function( #column scalar
+  function( # - [ ] column scalar
     xest,
     jscale = c('var', 'gross', 'long', 'short'),
     beta1=F #modified default to FALSE
@@ -276,8 +311,8 @@ pcajscale <-
   }
 
 #' @export
-pcarot <-
-  function( #alias
+pcarot <- #alias
+  function(
     x,...
   ) {
     pcaest(x=x,...)
@@ -285,7 +320,7 @@ pcarot <-
 
 #' @export
 pcarot0 <- 
-  function( #class='pcaest' | min-range-rotator taking pcaest as input
+  function( # - [ ] class='pcaest' | min-range-rotator taking pcaest as input
     x1, #pcaest object
     krot=2:3,
     irotwin=x1$par$irotwin[1]:x1$par$irotwin[2]
@@ -311,8 +346,8 @@ pcarot0 <-
 
 
 #' @export
-pcadrc <-
-  function(  #class='pcaest' | min-range-rotator taking pcaest as input
+pcadrc <-  # - [ ] class='pcaest' | min-range-rotator taking pcaest as input
+  function(
     pca,
     date0=as.Date('1994-12-31'),
     kbar=3
